@@ -1,0 +1,299 @@
+---
+title: "Test Doc Publication"
+project:
+  type: website
+  output-dir: docs
+format:
+  html:
+    self-contained: true
+    #page-layout: full
+    embed-resources: true
+    link-external-icon: true
+    link-external-newwindow: true
+    toc: true
+    toc-title: Contents
+    toc-location: left
+    toc_float: true
+    number-sections: true
+    toc-depth: 4
+    theme: cosmo
+    mainfont: Arial
+    css: styles.css
+    margin-width: 50px
+    page-width: 15
+    body-width: 2000px
+    toc-header-name: "Contents"   
+    grid:
+      body-width: 1000px
+      sidebar-width: 350px
+      margin-width: 200px
+reference-location: margin
+citation-location: margin
+execute:
+  echo: false
+  warning: false
+editor: source
+---
+
+```{r,libraries, include=FALSE}
+
+options("scipen" = 100, "digits" = 4) # suppress math annotation
+options(stringsAsFactors = F) # no automatic data transformation
+
+#load libraries
+
+
+# library(readxl)
+# library(tidyverse)
+
+#install package manager if not already installed
+if (!("pacman" %in% rownames(installed.packages()))) {install.packages("pacman")}
+
+#special process required to install NHSRtheme from github as not in CRAN
+if (!("devtools" %in% rownames(installed.packages()))) {install.packages("devtools")}
+if (!("NHSRtheme" %in% rownames(installed.packages()))) {devtools::install_github('nhs-r-community/NHSRtheme')}
+
+#load packages if not in library
+pacman::p_load(
+  here
+  ,DT
+  ,girafe
+  ,tidyverse
+  )
+
+
+options(scipen = 999) #turns off scientific notation
+
+```
+
+```{r,logo_setup, include=FALSE}
+
+knitr::opts_chunk$set(
+                 external = TRUE,
+                 echo = FALSE,
+                 warning = FALSE,
+                 message = FALSE
+                )
+
+```
+
+```{r,setup, include=FALSE}
+
+knitr::read_chunk(here::here('processing.R') )
+
+```
+
+```{r,setup_theme, include=FALSE}
+#runs setup_theme script
+```
+
+```{r,processing, include=FALSE}
+#runs processing script
+```
+
+
+<br/>
+
+**Data Period:** Responses collected from: 
+
+**Data Source/s:** 
+
+**Data Quality Comments:**
+
+**Information Governance:** Data is downloaded from ONS. Data is publicly available for purposes of testing deployment of quarto to GitHub Pages.
+
+**Disclaimer:** 
+
+**Last Refreshed:** `r format(Sys.Date(), '%d %b %Y')`
+
+**Date First Published:**
+
+**Report Owner:** 
+
+**Developer:** Daniel Levy, PhD -- Principal Analyst, Public Health <br/> **Email:** dan.levy\@wales.nhs.uk
+
+<br/>
+
+## Introduction
+
+This respository has been repurposed to test publishing to GitHub Pages. [Postcode data](https://open-geography-portalx-ons.hub.arcgis.com/datasets/b8451168e985446eb8269328615dec62/about){.external target="_blank"}is downloaded from ONS
+while [WIMD 2025 data](https://stats.gov.wales/en-GB/9706edd9-73ad-4902-bb12-7ccd7038626e?sort_by%5BcolumnName%5D=Data%20description&sort_by%5Bdirection%5D=DESC#data){.external target="_blank"} is downloaded from Stats Wales.
+
+Data was joined by WIMD IMD rank. Local quintiles were generated from ranks preserved after filtering to Cardiff and Vale of Glamorgan Local Authorities.
+
+<br/>
+
+## Graph
+
+Data can be published in graphs. These can be stand-alone, or wrapped within interactive HTML containers.
+
+
+<br/>
+
+### Containers
+
+The graphs below are in a **tabset**, showing either combined data, or data in which the two Local Authorities of Cardiff and Vale of Glamorgan are separated.
+
+
+<br/>
+
+
+
+::: {.panel-tabset .nav-pills}
+
+## Split
+
+```{r, include=TRUE}
+#| fig-asp: .6
+#| out-width: 90%
+#| fig-width: 7.714
+#| label: fig-test_graph_split
+#| fig-cap: "Postcodes in Cardiff vs Vale"
+#| cap-location: bottom
+
+
+#####extract graphs of interest
+postcodes_wimd |> 
+  mutate(wimd_2025_local_quint = cut_number(data_values, 5, labels = FALSE) ) |>
+  summarise(postcode_count = n_distinct(pcd7), .by = c(ladnm, wimd_2025_local_quint)) |> 
+    ggplot(
+      aes(x = wimd_2025_local_quint, y = postcode_count)
+      ) +
+      geom_bar(stat="identity") +
+      facet_wrap(~ladnm) + 
+      theme_minimal()
+
+#https://dl4nhs.github.io/postcodes_deprivation/
+
+#quarto publish gh-pages test_publication.qmd
+
+```
+
+
+## Combined
+
+```{r, include=TRUE}
+#| fig-asp: .6
+#| out-width: 90%
+#| fig-width: 7.714
+#| label: fig-test_graph
+#| fig-cap: "Postcodes in CaV"
+#| cap-location: bottom
+
+
+#####extract graphs of interest
+postcodes_wimd |> 
+  mutate(wimd_2025_local_quint = cut_number(data_values, 5, labels = FALSE) ) |>
+  summarise(postcode_count = n_distinct(pcd7), .by = c(ladnm, wimd_2025_local_quint)) |> 
+    ggplot(
+      aes(x = wimd_2025_local_quint, y = postcode_count)
+      ) +
+      geom_bar(stat="identity"
+               # ,aes(fill = ladnm)
+               ) +
+      # facet_wrap(~ladnm) + 
+      theme_minimal()
+
+#https://dl4nhs.github.io/postcodes_deprivation/
+
+#quarto publish gh-pages test_publication.qmd
+
+```
+
+:::
+
+
+<br/>
+
+### Interactive Graph
+
+Using a package such as ggiraph, we can render charts interactively, displaying information about data points on demand.
+
+```{r, include=TRUE}
+#| fig-asp: .6
+#| out-width: 90%
+#| fig-width: 7.714
+#| label: fig-test_graph_interactive
+#| fig-cap: "Postcodes in Cardiff vs Vale"
+#| cap-location: bottom
+
+
+#####extract graphs of interest
+gg_chart <- postcodes_wimd |> 
+  mutate(wimd_2025_local_quint = cut_number(data_values, 5, labels = FALSE) ) |>
+  summarise(postcode_count = n_distinct(pcd7), .by = c(ladnm, wimd_2025_local_quint)) |> 
+  mutate(id = row_number()) |> 
+    ggplot(
+      aes(x = wimd_2025_local_quint, y = postcode_count)
+      ) +
+      ggiraph::geom_bar_interactive(stat="identity", position=position_dodge(),
+        aes(fill = ladnm,
+          tooltip = postcode_count, data_id = id)
+               ) +
+      # facet_wrap(~ladnm) + 
+      theme_minimal()
+
+
+ggiraph::girafe(ggobj = gg_chart)
+
+#https://dl4nhs.github.io/postcodes_deprivation/
+
+#quarto publish gh-pages test_publication.qmd
+
+```
+
+<br/>
+
+
+
+
+::: {.callout-note collapse="true"}
+## Downloading Data
+
+While interactive graphs can be fiddly, they can also allow easy download of images for use in other work and presentation. This is also seen in some tables such as seen below in @fig-test_table.
+
+:::
+
+
+
+<br/>
+
+
+## Table
+
+Tables of data can be published in a static or interactive form. Below is a table in which data can be searched, ordered, exported and printed.
+
+<br/>
+
+```{r, include=TRUE}
+#| fig-asp: .6
+#| out-width: 90%
+#| fig-width: 7.714
+#| label: fig-test_table
+#| fig-cap: "Table of Postcodes in CaV"
+#| cap-location: margin
+
+
+#####extract graphs of interest
+postcodes_wimd |> 
+  select(pcd7, ladnm, data_values, data_description, domain) |> 
+  datatable(
+    filter = 'top', 
+    extensions = 'Buttons',
+    options = list(dom = 'Blfrtip',
+    buttons = c('copy', 
+                'csv', 
+                'pdf', 
+                'print'),
+    lengthMenu = list(c(10,25,50,-1),
+    c(10,25,50,"All"))))
+
+
+
+#https://dl4nhs.github.io/postcodes_deprivation/
+
+#quarto publish gh-pages test_publication.qmd
+
+```
+
+<br/>
