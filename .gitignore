@@ -1,6 +1,6 @@
 ### CUSTOM IGNORES
 
-#*.html #allowing to try and publish to github-doc using github action
+*.html
 *.RData
 *.Rproj
 *.csv
